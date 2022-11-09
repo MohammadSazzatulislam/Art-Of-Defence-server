@@ -63,6 +63,22 @@ async function run() {
     })
 
 
+    app.get('/review', async (req, res) => {
+      let query = {}
+      if (req.query.email) {
+        query = {
+          email : req.query.email
+        };
+      }
+      const filter = reviewCollection.find(query)
+      const result = await filter.toArray()
+      res.send(result)
+
+    })
+
+    
+
+
 
   } finally {
   }
