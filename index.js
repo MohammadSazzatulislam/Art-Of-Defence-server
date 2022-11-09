@@ -36,6 +36,13 @@ async function run() {
       res.send(services);
     });
 
+    app.post('/services', async (req, res) => {
+      const query = req.body
+      const result = await serviceCollection.insertOne(query);
+      res.send(result)
+      
+    })
+
     app.get("/details/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
@@ -82,6 +89,7 @@ async function run() {
       const result =await reviewCollection.deleteOne(filter)
       res.send(result)
     })
+
 
     
 
