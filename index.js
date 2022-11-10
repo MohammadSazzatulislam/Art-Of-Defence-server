@@ -17,10 +17,41 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+async function verifyJWT (req, res, next) {
+  
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    res.status(401).send({message : 'unauthorization access'})
+  }
+
+  jwt.verify(authorization, process.env.JWT_TOKEN_ACCESS, function (err, decoded) {
+    if (err) {
+      res.status(401).send({ message: "unauthorization access" });
+    }
+    req.decoded = decoded
+    next()
+  })
+
+}
+
+
+
+
+
+
 async function run() {
   try {
     const serviceCollection = client.db("artDefensee").collection("servicess");
     const reviewCollection = client.db("artUserReviews").collection("reviews");
+
+    app.post('/jwt', async (req, res) => {
+      const user = req.body
+      const token = jwt.sign(user, process.env.JWT_TOKEN_ACCESS, {
+        expiresIn: "2d",
+      });
+      res.send({token})
+
+    })
 
     app.get("/services", async (req, res) => {
       const query = {};
@@ -57,15 +88,16 @@ async function run() {
 
     app.put("/reviews/:id", async (req, res) => {
       const id = req.params.id;
-      const cursor = req.body;
+      const filter = {_id:ObjectId(id)}
+      const user = req.body;
       const option = { upsert: true };
       const update = {
         $set: {
-          name: cursor.name,
-          description: cursor.description,
+          name: user.name,
+          description: user.description,
         },
       };
-      const result = await reviewCollection.updateOne(cursor, update, option);
+      const result = await reviewCollection.updateOne(filter, update, option);
       res.send(result);
     });
 
@@ -88,13 +120,21 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/review", async (req, res) => {
+    app.get("/review", verifyJWT, async (req, res) => {
+
+      const decoded = req.decoded
+      if (decoded.email !== req.query.email) {
+        res.status(403).send({message: "Forbidden access"})
+      }
+
       let query = {};
       if (req.query.email) {
         query = {
           email: req.query.email,
         };
       }
+
+
       const filter = reviewCollection.find(query);
       const result = await filter.toArray();
       res.send(result);
@@ -106,6 +146,7 @@ async function run() {
       const result = await reviewCollection.deleteOne(filter);
       res.send(result);
     });
+
   } finally {
   }
 }
