@@ -17,7 +17,7 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
-async function verifyJWT (req, res, next) {
+ function verifyJWT (req, res, next) {
   
   const authorization = req.headers.authorization;
   if (!authorization) {
@@ -35,10 +35,6 @@ async function verifyJWT (req, res, next) {
 }
 
 
-
-
-
-
 async function run() {
   try {
     const serviceCollection = client.db("artDefensee").collection("servicess");
@@ -47,7 +43,7 @@ async function run() {
     app.post('/jwt', async (req, res) => {
       const user = req.body
       const token = jwt.sign(user, process.env.JWT_TOKEN_ACCESS, {
-        expiresIn: "2d",
+        expiresIn: "1d",
       });
       res.send({token})
 
@@ -123,6 +119,7 @@ async function run() {
     app.get("/review", verifyJWT, async (req, res) => {
 
       const decoded = req.decoded
+
       if (decoded.email !== req.query.email) {
         res.status(403).send({message: "Forbidden access"})
       }
