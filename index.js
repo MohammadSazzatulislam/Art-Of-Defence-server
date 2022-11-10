@@ -17,37 +17,37 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
- function verifyJWT (req, res, next) {
-  
+function verifyJWT(req, res, next) {
   const authorization = req.headers.authorization;
   if (!authorization) {
-    res.status(401).send({message : 'unauthorization access'})
+    res.status(401).send({ message: "unauthorization access" });
   }
 
-  jwt.verify(authorization, process.env.JWT_TOKEN_ACCESS, function (err, decoded) {
-    if (err) {
-      res.status(401).send({ message: "unauthorization access" });
+  jwt.verify(
+    authorization,
+    process.env.JWT_TOKEN_ACCESS,
+    function (err, decoded) {
+      if (err) {
+        res.status(401).send({ message: "unauthorization access" });
+      }
+      req.decoded = decoded;
+      next();
     }
-    req.decoded = decoded
-    next()
-  })
-
+  );
 }
-
 
 async function run() {
   try {
     const serviceCollection = client.db("artDefensee").collection("servicess");
     const reviewCollection = client.db("artUserReviews").collection("reviews");
 
-    app.post('/jwt', async (req, res) => {
-      const user = req.body
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
       const token = jwt.sign(user, process.env.JWT_TOKEN_ACCESS, {
         expiresIn: "1d",
       });
-      res.send({token})
-
-    })
+      res.send({ token });
+    });
 
     app.get("/services", async (req, res) => {
       const query = {};
@@ -84,7 +84,7 @@ async function run() {
 
     app.put("/reviews/:id", async (req, res) => {
       const id = req.params.id;
-      const filter = {_id:ObjectId(id)}
+      const filter = { _id: ObjectId(id) };
       const user = req.body;
       const option = { upsert: true };
       const update = {
@@ -117,11 +117,10 @@ async function run() {
     });
 
     app.get("/review", verifyJWT, async (req, res) => {
-
-      const decoded = req.decoded
+      const decoded = req.decoded;
 
       if (decoded.email !== req.query.email) {
-        res.status(403).send({message: "Forbidden access"})
+        res.status(403).send({ message: "Forbidden access" });
       }
 
       let query = {};
@@ -130,7 +129,6 @@ async function run() {
           email: req.query.email,
         };
       }
-
 
       const filter = reviewCollection.find(query);
       const result = await filter.toArray();
@@ -143,7 +141,6 @@ async function run() {
       const result = await reviewCollection.deleteOne(filter);
       res.send(result);
     });
-
   } finally {
   }
 }
